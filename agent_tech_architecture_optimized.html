@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>多 Agent 课件生成平台技术架构设计方案</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --ink: #101828;
+      --muted: #667085;
+      --line: #d8e0ee;
+      --panel: #ffffff;
+      --panel-2: #f8fbff;
+      --blue: #155eef;
+      --blue-2: #0b4dbc;
+      --cyan: #087e8b;
+      --green: #16834a;
+      --purple: #6941c6;
+      --orange: #b75e00;
+      --red: #b42318;
+      --slate: #344054;
+      --shadow: 0 16px 42px rgba(16, 24, 40, 0.1);
+      --radius: 8px;
+      --max: 1440px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, #eaf1ff 0, #f5f7fb 430px),
+        var(--bg);
+      font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      line-height: 1.62;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .shell {
+      width: min(var(--max), calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      padding: 46px 0 22px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+      gap: 28px;
+      align-items: end;
+    }
+
+    h1 {
+      margin: 0;
+      color: #06193d;
+      font-size: clamp(34px, 4.8vw, 66px);
+      line-height: 1.04;
+      font-weight: 880;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 900px;
+      margin: 18px 0 0;
+      color: #344054;
+      font-size: clamp(16px, 1.4vw, 21px);
+    }
+
+    .hero-panel {
+      border: 1px solid rgba(21, 94, 239, 0.22);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.86);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .hero-panel h2 {
+      margin: 0 0 10px;
+      color: var(--blue-2);
+      font-size: 18px;
+    }
+
+    .hero-panel p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .stat {
+      border: 1px solid #e4eaf5;
+      border-radius: 7px;
+      background: #f9fbff;
+      padding: 11px 12px;
+    }
+
+    .stat b {
+      display: block;
+      color: #06193d;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border: 1px solid rgba(216, 224, 238, 0.9);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 12px 30px rgba(16, 24, 40, 0.08);
+      backdrop-filter: blur(16px);
+    }
+
+    .nav-inner {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 8px;
+    }
+
+    .nav a {
+      flex: 0 0 auto;
+      border-radius: 6px;
+      padding: 10px 13px;
+      color: #344054;
+      font-size: 13px;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    .nav a:hover {
+      color: #fff;
+      background: var(--blue);
+    }
+
+    main {
+      padding-bottom: 44px;
+    }
+
+    section {
+      margin: 30px 0;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 28px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      margin: 0;
+      color: #0b244f;
+      font-size: clamp(25px, 2.5vw, 38px);
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    .section-head p {
+      max-width: 650px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .card,
+    .layer,
+    .arch-board,
+    .code-card,
+    .table-wrap,
+    .lane {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 12px 30px rgba(16, 24, 40, 0.07);
+    }
+
+    .principles {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      padding: 17px;
+    }
+
+    .card .eyebrow,
+    .layer .eyebrow {
+      display: inline-flex;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      padding: 4px 8px;
+      color: #fff;
+      background: var(--accent, var(--blue));
+      font-size: 12px;
+      font-weight: 820;
+    }
+
+    .card h3,
+    .layer h3,
+    .lane h3 {
+      margin: 0;
+      color: #132b56;
+      font-size: 18px;
+      line-height: 1.3;
+    }
+
+    .card p,
+    .layer p,
+    .lane p {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .arch-board {
+      padding: 14px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.94));
+    }
+
+    .arch-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 1.35fr 1.2fr 1fr;
+      grid-template-areas:
+        "channel intent planner agents delivery"
+        "knowledge knowledge planner tools delivery"
+        "policy runtime runtime runtime eval"
+        "infra infra infra infra infra";
+      gap: 12px;
+    }
+
+    .layer {
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    .layer::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 5px;
+      background: var(--accent, var(--blue));
+    }
+
+    .channel { grid-area: channel; --accent: var(--blue); }
+    .intent { grid-area: intent; --accent: var(--cyan); }
+    .planner { grid-area: planner; --accent: var(--purple); }
+    .agents { grid-area: agents; --accent: #7a3fb4; }
+    .delivery { grid-area: delivery; --accent: var(--green); }
+    .knowledge { grid-area: knowledge; --accent: #0f7896; }
+    .tools { grid-area: tools; --accent: #1155cc; }
+    .policy { grid-area: policy; --accent: var(--red); }
+    .runtime { grid-area: runtime; --accent: #344054; }
+    .eval { grid-area: eval; --accent: var(--orange); }
+    .infra { grid-area: infra; --accent: #0b4dbc; }
+
+    .layer-title {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      display: inline-grid;
+      width: 31px;
+      height: 31px;
+      flex: 0 0 31px;
+      place-items: center;
+      border-radius: 50%;
+      color: white;
+      background: var(--accent, var(--blue));
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .item {
+      border: 1px solid #e4eaf5;
+      border-radius: 7px;
+      background: var(--panel-2);
+      padding: 9px 10px;
+      color: #263b61;
+      font-size: 13px;
+      font-weight: 720;
+    }
+
+    .item small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 520;
+      line-height: 1.42;
+    }
+
+    .planner-map {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .planner-step {
+      position: relative;
+      border: 1px solid rgba(105, 65, 198, 0.24);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, #ffffff, #fbf9ff);
+      padding: 14px 12px;
+      min-height: 158px;
+    }
+
+    .planner-step b {
+      display: inline-grid;
+      width: 29px;
+      height: 29px;
+      place-items: center;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--purple);
+      font-size: 13px;
+    }
+
+    .planner-step strong {
+      display: block;
+      margin-top: 10px;
+      color: #2c1d66;
+      font-size: 14px;
+      line-height: 1.34;
+    }
+
+    .planner-step span {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .lanes {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .lane {
+      padding: 16px;
+    }
+
+    .lane-flow {
+      display: grid;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: 130px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      border: 1px solid #e4eaf5;
+      border-radius: 7px;
+      background: #fbfdff;
+      padding: 10px;
+    }
+
+    .flow-row b {
+      color: var(--blue-2);
+      font-size: 13px;
+    }
+
+    .flow-row span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .decision-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .decision-card {
+      border-left: 5px solid var(--accent, var(--blue));
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0 10px 26px rgba(16, 24, 40, 0.07);
+      padding: 15px 16px;
+    }
+
+    .decision-card strong {
+      display: block;
+      color: #132b56;
+      font-size: 15px;
+    }
+
+    .decision-card span {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      min-width: 170px;
+      border-bottom: 1px solid #e4eaf5;
+      padding: 13px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      color: #0b244f;
+      background: #eef4ff;
+      font-size: 12px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    td:first-child {
+      color: #132b56;
+      font-weight: 820;
+    }
+
+    .code-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .code-card {
+      overflow: hidden;
+      background: #081526;
+      color: #d9eaff;
+    }
+
+    .code-card header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.13);
+      padding: 12px 15px;
+      color: #9ec5ff;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    pre {
+      margin: 0;
+      overflow-x: auto;
+      padding: 16px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.72;
+      white-space: pre;
+    }
+
+    .source-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .source {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 15px;
+    }
+
+    .source a {
+      color: var(--blue-2);
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .source p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer {
+      margin: 32px 0 0;
+      border-radius: var(--radius);
+      background: #06193d;
+      color: #dce8ff;
+      padding: 20px 22px;
+    }
+
+    .footer strong {
+      color: #fff;
+    }
+
+    @media (max-width: 1180px) {
+      .hero-grid,
+      .lanes,
+      .code-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .principles,
+      .decision-grid,
+      .source-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .arch-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+          "channel intent"
+          "planner planner"
+          "agents tools"
+          "knowledge delivery"
+          "policy eval"
+          "runtime runtime"
+          "infra infra";
+      }
+
+      .planner-map {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 24px, var(--max));
+      }
+
+      .hero {
+        padding-top: 30px;
+      }
+
+      .section-head {
+        display: block;
+      }
+
+      .section-head p {
+        margin-top: 8px;
+      }
+
+      .hero-stats,
+      .principles,
+      .decision-grid,
+      .source-grid,
+      .planner-map {
+        grid-template-columns: 1fr;
+      }
+
+      .arch-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas: none;
+      }
+
+      .channel,
+      .intent,
+      .planner,
+      .agents,
+      .delivery,
+      .knowledge,
+      .tools,
+      .policy,
+      .runtime,
+      .eval,
+      .infra {
+        grid-area: auto;
+      }
+
+      .flow-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .nav {
+        position: static;
+      }
+
+      .card,
+      .layer,
+      .arch-board,
+      .code-card,
+      .table-wrap,
+      .lane {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero shell">
+    <div class="hero-grid">
+      <div>
+        <h1>多 Agent 课件生成平台技术架构设计方案</h1>
+        <p class="subtitle">面向生产落地的新版架构：以 Planner 控制面为核心，结合多智能体协作、RAG 证据链、MCP 工具生态、权限治理、评测回放与交付闭环，支撑从教学意图到可发布课件的全过程。</p>
+      </div>
+      <aside class="hero-panel">
+        <h2>设计取向</h2>
+        <p>不把多 Agent 做成“多个提示词串联”，而是做成可路由、可暂停、可评估、可追踪、可授权、可局部修复的工程系统。页面基于 2026-07-07 检索到的官方资料和工程经验整理。</p>
+        <div class="hero-stats">
+          <div class="stat"><b>3 面</b><span>控制面 / 执行面 / 治理面</span></div>
+          <div class="stat"><b>7 步</b><span>Planner 编排闭环</span></div>
+          <div class="stat"><b>5 门</b><span>权限与质量闸口</span></div>
+        </div>
+      </aside>
+    </div>
+  </header>
+
+  <nav class="nav shell" aria-label="页面导航">
+    <div class="nav-inner">
+      <a href="#principles">设计原则</a>
+      <a href="#architecture">技术架构</a>
+      <a href="#planner">Planner 编排</a>
+      <a href="#policy">权限治理</a>
+      <a href="#routing">路由策略</a>
+      <a href="#runtime">运行时</a>
+      <a href="#roadmap">落地路线</a>
+      <a href="#sources">资料来源</a>
+    </div>
+  </nav>
+
+  <main class="shell">
+    <section id="principles">
+      <div class="section-head">
+        <h2>一、设计原则</h2>
+        <p>新版架构把“生成体验”与“工程可靠性”放在同一优先级：用户看到的是课件生成，系统内部真正运行的是有权限、有状态、有证据、有评测的任务编排。</p>
+      </div>
+      <div class="principles">
+        <article class="card" style="--accent: var(--blue);">
+          <span class="eyebrow">Control Plane</span>
+          <h3>Planner 是控制面，不是普通 Agent</h3>
+          <p>Planner 负责意图识别、任务图、依赖、预算、并发、授权、handoff 和终止条件。内容生成 Agent 只负责专业产出，不能随意改工作流。</p>
+        </article>
+        <article class="card" style="--accent: var(--cyan);">
+          <span class="eyebrow">Evidence First</span>
+          <h3>先证据、后生成</h3>
+          <p>凡涉及教材、知识点、公式、事实、题目答案和引用，都先构建 Evidence Pack，再交给内容 Agent，避免无证据生成。</p>
+        </article>
+        <article class="card" style="--accent: var(--purple);">
+          <span class="eyebrow">Least Privilege</span>
+          <h3>工具权限最小化</h3>
+          <p>MCP、导出、写库、发起联网检索、覆盖文件、发布课件等动作必须经过工具级 scope、策略校验和必要的人审。</p>
+        </article>
+        <article class="card" style="--accent: var(--green);">
+          <span class="eyebrow">Repair Loop</span>
+          <h3>局部修复优先</h3>
+          <p>评审失败后不全量推翻，而是定位到页面、组件、知识点、引用或交互状态，使用 checkpoint 进行局部重生。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="section-head">
+        <h2>二、优化后的技术架构</h2>
+        <p>整体采用三层视角：控制面负责“该怎么做”，执行面负责“把事情做完”，治理面负责“能不能做、是否合格、如何追踪”。</p>
+      </div>
+      <div class="arch-board">
+        <div class="arch-grid">
+          <article class="layer channel">
+            <div class="layer-title"><span class="badge">1</span><h3>用户入口与任务通道</h3></div>
+            <p>统一承接对话、文件、模板、历史课件、教研规范和交付格式。</p>
+            <div class="list">
+              <div class="item">Chat / Workspace<small>自然语言输入、模板选择、多轮澄清。</small></div>
+              <div class="item">Upload Gateway<small>PDF、Word、PPT、图片、音视频、题库。</small></div>
+              <div class="item">Artifact Console<small>预览、编辑、导出、版本和发布。</small></div>
+            </div>
+          </article>
+
+          <article class="layer intent">
+            <div class="layer-title"><span class="badge">2</span><h3>意图理解与上下文组装</h3></div>
+            <p>将用户输入标准化为任务信号和约束。</p>
+            <div class="list">
+              <div class="item">Intent Classifier<small>生成、改写、补证据、互动设计、导出、评估。</small></div>
+              <div class="item">Slot Extractor<small>年级、学科、知识点、教材版本、课时、风格。</small></div>
+              <div class="item">Context Assembler<small>历史会话、上传资料摘要、用户偏好、权限。</small></div>
+            </div>
+          </article>
+
+          <article class="layer planner">
+            <div class="layer-title"><span class="badge">3</span><h3>Multi-Agent Planner 控制面</h3></div>
+            <p>核心优化点：Planner 输出 Typed Plan，而不是让大模型自由调用所有工具。计划必须包含 DAG、Agent 契约、工具 scope、预算、评审规则和失败回退。</p>
+            <div class="list">
+              <div class="item">Plan Graph Builder<small>构建任务 DAG、依赖、可并发节点和阻塞点。</small></div>
+              <div class="item">Policy-aware Router<small>根据权限、风险、成本、延迟选择链路。</small></div>
+              <div class="item">Execution Arbiter<small>决定 agents-as-tools、handoff、parallel fan-out、human checkpoint。</small></div>
+              <div class="item">Convergence Judge<small>判断是否完成、重试、降级、局部修复或请求澄清。</small></div>
+            </div>
+          </article>
+
+          <article class="layer agents">
+            <div class="layer-title"><span class="badge">4</span><h3>专业 Agent 执行面</h3></div>
+            <p>每个 Agent 拥有窄职责、独立上下文、明确输入输出 Schema 和工具白名单。</p>
+            <div class="list">
+              <div class="item">Teaching Designer<small>教学目标、结构、活动、评价。</small></div>
+              <div class="item">Knowledge Retriever<small>RAG / GraphRAG、证据包、引用。</small></div>
+              <div class="item">Content Composer<small>页面内容、讲稿、案例、题目。</small></div>
+              <div class="item">Interaction Designer<small>拖拽、实验、测验、互动状态机。</small></div>
+              <div class="item">Renderer / Packager<small>HTML、PPTX、JSON、资源打包。</small></div>
+            </div>
+          </article>
+
+          <article class="layer delivery">
+            <div class="layer-title"><span class="badge">5</span><h3>交付与用户反馈闭环</h3></div>
+            <p>交付物既是结果，也是下一轮改写和评估的输入。</p>
+            <div class="list">
+              <div class="item">Preview Runtime<small>真实渲染、互动检查、移动端适配。</small></div>
+              <div class="item">Export Service<small>HTML、PPTX、教案、讲稿、练习、引用包。</small></div>
+              <div class="item">Edit Delta<small>用户二次编辑记录为 patch，回流记忆层。</small></div>
+            </div>
+          </article>
+
+          <article class="layer knowledge">
+            <div class="layer-title"><span class="badge">6</span><h3>知识与证据层</h3></div>
+            <p>面向教学场景的 RAG 不只是向量召回，还要处理教材结构、章节层级、题目答案、公式、图片和教学目标。</p>
+            <div class="list">
+              <div class="item">Parser + OCR + Layout<small>版面、表格、公式、图片、章节结构。</small></div>
+              <div class="item">Hybrid Retrieval<small>BM25 + Vector + Graph + Rerank。</small></div>
+              <div class="item">Evidence Pack<small>证据片段、来源、置信度、引用位置、可用限制。</small></div>
+            </div>
+          </article>
+
+          <article class="layer tools">
+            <div class="layer-title"><span class="badge">7</span><h3>工具 / MCP / Skill 层</h3></div>
+            <p>工具统一注册、统一授权、统一审计。对外部工具采用 MCP 连接，对内部能力采用函数工具或服务接口。</p>
+            <div class="list">
+              <div class="item">Tool Registry<small>Schema、版本、scope、风险等级、超时、幂等性。</small></div>
+              <div class="item">MCP Gateway<small>OAuth 2.1、resource metadata、audience 校验。</small></div>
+              <div class="item">Tool Guardrails<small>参数校验、结果过滤、敏感动作审批。</small></div>
+            </div>
+          </article>
+
+          <article class="layer policy">
+            <div class="layer-title"><span class="badge">8</span><h3>权限与安全治理</h3></div>
+            <p>在每个边界进行判定：用户能否发起、Agent 能否访问、工具能否执行、产物能否发布。</p>
+            <div class="list">
+              <div class="item">RBAC / ABAC<small>角色、租户、学科、数据域、动作粒度。</small></div>
+              <div class="item">Approval Gate<small>发布、覆盖、联网、写库、外发、敏感工具。</small></div>
+              <div class="item">Data Policy<small>隐私脱敏、版权标注、未成年人保护、保留周期。</small></div>
+            </div>
+          </article>
+
+          <article class="layer runtime">
+            <div class="layer-title"><span class="badge">9</span><h3>Agent Runtime 与状态层</h3></div>
+            <p>承载长任务、并发执行、可恢复状态和可观测性。</p>
+            <div class="list">
+              <div class="item">Run State / Checkpoint<small>每个节点状态、输入输出、失败原因、恢复点。</small></div>
+              <div class="item">Session Memory<small>当前会话、用户偏好、最近产物、active agent。</small></div>
+              <div class="item">Trace + Metrics<small>模型调用、工具调用、handoff、guardrail、成本、延迟。</small></div>
+            </div>
+          </article>
+
+          <article class="layer eval">
+            <div class="layer-title"><span class="badge">10</span><h3>评测与质量门禁</h3></div>
+            <p>正式交付前必须通过教学、事实、引用、交互、格式和安全检查。</p>
+            <div class="list">
+              <div class="item">Critic Agent<small>课标一致性、知识正确性、难度和表达。</small></div>
+              <div class="item">Regression Evals<small>Golden Set、Trace Replay、工具 Mock、A/B。</small></div>
+              <div class="item">Quality Gate<small>不通过则局部修复、降级或人工确认。</small></div>
+            </div>
+          </article>
+
+          <article class="layer infra">
+            <div class="layer-title"><span class="badge">11</span><h3>平台基础设施</h3></div>
+            <p>支撑模型网关、队列调度、对象存储、向量库、图数据库、缓存、日志、CI/CD、灰度发布和多租户隔离。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="planner">
+      <div class="section-head">
+        <h2>三、Multi-Agent Planner 编排逻辑优化</h2>
+        <p>Planner 的关键优化是“确定性工作流 + Agentic 决策”的混合：确定性部分保证边界和稳定，Agentic 部分处理开放式教学设计。</p>
+      </div>
+      <div class="planner-map">
+        <div class="planner-step"><b>1</b><strong>Task Intake</strong><span>归一化输入，识别请求类型、上下文、资料、目标格式和关键缺失字段。</span></div>
+        <div class="planner-step"><b>2</b><strong>Risk & Permission Preflight</strong><span>在生成前检查租户、角色、数据域、工具 scope、联网许可和敏感动作。</span></div>
+        <div class="planner-step"><b>3</b><strong>Plan DAG</strong><span>输出可执行任务图：节点、依赖、并发组、预算、截止条件和 checkpoint。</span></div>
+        <div class="planner-step"><b>4</b><strong>Context Routing</strong><span>每个 Agent 只拿必要上下文：摘要、证据包、用户偏好、约束，不共享无关历史。</span></div>
+        <div class="planner-step"><b>5</b><strong>Execution Strategy</strong><span>选择 agents-as-tools、handoff、router fan-out、skills 或自定义工作流。</span></div>
+        <div class="planner-step"><b>6</b><strong>Convergence & Critic</strong><span>对阶段产物做教学、事实、引用、交互和格式评审，决定通过或局部返工。</span></div>
+        <div class="planner-step"><b>7</b><strong>Delivery & Learning</strong><span>交付产物、记录 trace、保存可复用记忆和失败样例，进入评测集。</span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>四、Planner 的编排模式选择</h2>
+        <p>结合最新资料和工程经验，建议不要单押一种多 Agent 模式，而是由 Planner 按任务形态动态选择。</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>编排模式</th>
+              <th>适用场景</th>
+              <th>优势</th>
+              <th>风险</th>
+              <th>本平台建议</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Agents as Tools</td>
+              <td>Supervisor 保持最终答复所有权，调用专家 Agent 完成边界清晰的子任务。</td>
+              <td>控制集中、上下文隔离、评审统一，适合正式课件生成主链路。</td>
+              <td>多一次汇总调用，延迟和成本略高。</td>
+              <td>默认模式。教学设计、内容生成、检索、渲染作为有契约的工具型 Agent。</td>
+            </tr>
+            <tr>
+              <td>Handoff</td>
+              <td>某个专家需要接管多轮对话，例如需求澄清、人工编辑、复杂交互配置。</td>
+              <td>减少重复路由，适合连续多轮专项工作。</td>
+              <td>上下文交接容易膨胀或丢消息，权限边界需要重新校验。</td>
+              <td>只用于需要专家接管用户交互的分支，并传递过滤后的 handoff context。</td>
+            </tr>
+            <tr>
+              <td>Router Fan-out</td>
+              <td>多个相互独立的分析任务可并发执行，例如资料摘要、题库抽取、案例检索。</td>
+              <td>延迟低、适合大上下文多域任务。</td>
+              <td>结果合并复杂，重复检索可能增加成本。</td>
+              <td>用于 RAG、质量检查、多格式导出和并行专家评审。</td>
+            </tr>
+            <tr>
+              <td>Skills / Prompt Packs</td>
+              <td>同一 Agent 需要按学科、学段、互动组件加载专用知识。</td>
+              <td>少建 Agent，灵活，适合提示词和模板复用。</td>
+              <td>上下文积累过多会影响成本和准确性。</td>
+              <td>用于学科风格、模板规则、互动组件指南，按需加载并限制 token 预算。</td>
+            </tr>
+            <tr>
+              <td>Custom Workflow</td>
+              <td>有明确业务状态机、审批、回滚、评估门禁和发布流程。</td>
+              <td>可测试、可回放、可恢复，最适合生产系统。</td>
+              <td>开发复杂度高，需要状态模型和运维能力。</td>
+              <td>作为平台主干；Agent 决策嵌入节点，不让模型直接掌控全部流程。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="policy">
+      <div class="section-head">
+        <h2>五、权限与治理设计</h2>
+        <p>多 Agent 系统的权限问题比传统应用更复杂：不是只有用户访问控制，还要控制 Agent 可见上下文、工具可执行动作和产物可发布范围。</p>
+      </div>
+      <div class="decision-grid">
+        <div class="decision-card" style="--accent: var(--blue);"><strong>用户权限</strong><span>RBAC 控制角色，ABAC 控制学科、学校、租户、资料来源、课程包和操作范围。</span></div>
+        <div class="decision-card" style="--accent: var(--cyan);"><strong>Agent 权限</strong><span>每个 Agent 使用最小上下文、最小工具集和最小数据域；禁止跨租户读取记忆或素材。</span></div>
+        <div class="decision-card" style="--accent: var(--purple);"><strong>工具权限</strong><span>Tool Registry 记录 scope、风险等级、幂等性和审批规则；高风险工具必须 human approval。</span></div>
+        <div class="decision-card" style="--accent: var(--green);"><strong>MCP 授权</strong><span>远程 MCP 按 OAuth 2.1 资源服务器模型校验 token、audience、scope 和 resource metadata。</span></div>
+        <div class="decision-card" style="--accent: var(--orange);"><strong>数据权限</strong><span>上传资料、教材、题库、学生信息、历史课件分别设数据域和保留策略，Evidence Pack 附带来源限制。</span></div>
+        <div class="decision-card" style="--accent: var(--red);"><strong>发布权限</strong><span>下载、分享、发布、覆盖旧版本、联网引用和外发文件都作为独立动作审计。</span></div>
+      </div>
+    </section>
+
+    <section id="routing">
+      <div class="section-head">
+        <h2>六、路由策略与失败回退</h2>
+        <p>路由策略应显式编码，不应完全依赖模型自由判断。下面给出推荐的混合编排逻辑。</p>
+      </div>
+      <div class="code-grid">
+        <div class="code-card">
+          <header><span>Planner Routing Policy</span><span>typed plan</span></header>
+          <pre>function buildPlan(input, user, session) {
+  normalized = normalize(input, session)
+  intent = classifyIntent(normalized)
+  slots = extractRequiredSlots(normalized)
+  risk = assessRisk(normalized, user)
+  permission = authorizePreflight(user, intent, normalized.resources)
+
+  if (!permission.allowed) return stop(permission.reason)
+  if (slots.criticalMissing) return askClarification(slots.missing)
+
+  plan = new PlanDAG({
+    budget: estimateBudget(intent, normalized.files),
+    traceLevel: risk.high ? "full" : "standard",
+    checkpoint: true
+  })
+
+  if (intent.needsEvidence) {
+    plan.add("parse_files")
+    plan.add("retrieve_evidence", dependsOn: ["parse_files"])
+    plan.add("build_evidence_pack", dependsOn: ["retrieve_evidence"])
+  }
+
+  plan.add("teaching_design", needs: ["intent", "constraints"])
+  plan.add("content_generation", needs: ["teaching_design", "evidence_pack"])
+  plan.addParallel(["interaction_design", "visual_design", "quiz_design"])
+  plan.add("render_artifact")
+  plan.add("evaluate_artifact")
+
+  if (risk.requiresApproval) plan.add("human_checkpoint")
+  plan.add("deliver_or_repair")
+  return plan
+}</pre>
+        </div>
+        <div class="code-card">
+          <header><span>Execution Arbiter</span><span>mode selection</span></header>
+          <pre>function selectExecutionMode(task) {
+  if (task.hasDeterministicStateMachine) {
+    return "custom_workflow"
+  }
+
+  if (task.requiresUserFacingSpecialistDialog) {
+    return "handoff_with_filtered_context"
+  }
+
+  if (task.isBoundedSpecialistWork) {
+    return "agent_as_tool"
+  }
+
+  if (task.canRunIndependentBranches) {
+    return "router_parallel_fanout"
+  }
+
+  if (task.onlyNeedsDomainPromptOrTemplate) {
+    return "skill_loaded_single_agent"
+  }
+
+  return "supervisor_managed_workflow"
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="runtime">
+      <div class="section-head">
+        <h2>七、运行时闭环</h2>
+        <p>运行时重点不是“能生成一次”，而是能长任务执行、失败恢复、回放问题、评估退化和持续优化。</p>
+      </div>
+      <div class="lanes">
+        <article class="lane">
+          <h3>主执行链路</h3>
+          <p>适用于从零生成完整课件。</p>
+          <div class="lane-flow">
+            <div class="flow-row"><b>Intake</b><span>接收用户目标、资料、模板、输出格式和权限上下文。</span></div>
+            <div class="flow-row"><b>Preflight</b><span>权限、风险、缺失字段、资料可解析性和预算预估。</span></div>
+            <div class="flow-row"><b>Plan DAG</b><span>确定节点、依赖、并发组、checkpoint 和工具 scope。</span></div>
+            <div class="flow-row"><b>Execute</b><span>Supervisor 调用专业 Agent 和工具，所有节点写入 trace。</span></div>
+            <div class="flow-row"><b>Evaluate</b><span>事实、引用、互动、版式、可访问性、安全和交付格式检查。</span></div>
+            <div class="flow-row"><b>Repair</b><span>失败节点局部重试，必要时请求用户确认或降级。</span></div>
+            <div class="flow-row"><b>Deliver</b><span>生成 HTML/PPTX/教案/练习，保存版本、引用包和运行摘要。</span></div>
+          </div>
+        </article>
+        <article class="lane">
+          <h3>可观测与评测链路</h3>
+          <p>适用于线上质量治理。</p>
+          <div class="lane-flow">
+            <div class="flow-row"><b>Trace</b><span>记录模型调用、工具调用、handoff、guardrail、审批和 custom span。</span></div>
+            <div class="flow-row"><b>Metrics</b><span>统计成功率、首 token 延迟、总耗时、成本、重试率、人工介入率。</span></div>
+            <div class="flow-row"><b>Golden Set</b><span>沉淀典型学科、题型、互动组件和失败案例。</span></div>
+            <div class="flow-row"><b>Replay</b><span>用历史 trace 回放新版本，检查 planner、prompt、模型或工具变更影响。</span></div>
+            <div class="flow-row"><b>A/B</b><span>灰度比较不同 planner 策略、检索策略、模型路由和评审门槛。</span></div>
+            <div class="flow-row"><b>Distill</b><span>把高频、稳定的 Agent 行为沉淀为模板、skill 或 deterministic node。</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <div class="section-head">
+        <h2>八、落地路线</h2>
+        <p>建议分三期交付，先打通闭环，再提升智能度，最后做规模化治理。</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>阶段</th>
+              <th>目标</th>
+              <th>关键建设</th>
+              <th>验收标准</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Phase 1：MVP 闭环</td>
+              <td>让用户能从资料生成可预览课件。</td>
+              <td>Intent Router、Plan DAG、3 个核心 Agent、基础 RAG、HTML/PPTX 导出、Trace。</td>
+              <td>能生成、能预览、能导出、失败可定位，不追求复杂互动全覆盖。</td>
+            </tr>
+            <tr>
+              <td>Phase 2：质量闭环</td>
+              <td>提升事实、引用、互动和版式稳定性。</td>
+              <td>Evidence Pack、Evaluator、局部修复、Golden Set、Trace Replay、权限审批。</td>
+              <td>典型样例回归通过；错误能被评审发现并局部修复。</td>
+            </tr>
+            <tr>
+              <td>Phase 3：规模化生产</td>
+              <td>支撑多学科、多租户、多模型、多工具稳定上线。</td>
+              <td>MCP Gateway、OAuth/scope、模型网关、成本优化、灰度发布、运营看板。</td>
+              <td>可灰度、可审计、可回滚、可扩展，核心指标可持续监控。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="sources">
+      <div class="section-head">
+        <h2>九、参考资料与吸收点</h2>
+        <p>以下为本方案参考的最新一手资料。页面内观点做了工程化重组，不是简单搬运。</p>
+      </div>
+      <div class="source-grid">
+        <article class="source">
+          <a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noreferrer">OpenAI Agents SDK</a>
+          <p>吸收 agent loop、agents as tools / handoffs、guardrails、MCP tool calling、sessions、human-in-the-loop、tracing 等运行时能力。</p>
+        </article>
+        <article class="source">
+          <a href="https://developers.openai.com/api/docs/guides/agents/orchestration" target="_blank" rel="noreferrer">OpenAI Orchestration and Handoffs</a>
+          <p>吸收“专家是否接管用户回复”作为 handoff 与 manager-style workflow 的核心分界。</p>
+        </article>
+        <article class="source">
+          <a href="https://developers.openai.com/api/docs/guides/agents/guardrails-approvals" target="_blank" rel="noreferrer">OpenAI Guardrails and Human Review</a>
+          <p>吸收输入、输出、工具 guardrail，以及敏感动作 human approval 的边界设计。</p>
+        </article>
+        <article class="source">
+          <a href="https://modelcontextprotocol.io/specification/draft/basic/authorization" target="_blank" rel="noreferrer">MCP Authorization Spec</a>
+          <p>吸收 OAuth 2.1、Protected Resource Metadata、scope challenge、audience 校验和 token 处理要求。</p>
+        </article>
+        <article class="source">
+          <a href="https://docs.langchain.com/oss/python/langchain/multi-agent" target="_blank" rel="noreferrer">LangChain Multi-agent Patterns</a>
+          <p>吸收 subagents、handoffs、skills、router、custom workflow 的模式取舍和性能权衡。</p>
+        </article>
+        <article class="source">
+          <a href="https://docs.langchain.com/oss/python/langchain/multi-agent/handoffs" target="_blank" rel="noreferrer">LangChain Handoffs</a>
+          <p>吸收 handoff context engineering、active_agent、Command routing 和消息配对边界。</p>
+        </article>
+        <article class="source">
+          <a href="https://developers.openai.com/api/docs/guides/agents/integrations-observability" target="_blank" rel="noreferrer">OpenAI Observability</a>
+          <p>吸收 model calls、tool calls、handoffs、guardrails 和 custom spans 的 trace 结构。</p>
+        </article>
+        <article class="source">
+          <a href="https://developers.openai.com/api/docs/guides/agent-evals" target="_blank" rel="noreferrer">OpenAI Agent Evals</a>
+          <p>吸收用评测闭环持续优化 Agent 工作流的方向，作为 Golden Set 和 Trace Replay 的依据。</p>
+        </article>
+      </div>
+    </section>
+
+    <div class="footer">
+      <strong>结论：</strong> 推荐把平台主干建设为“Typed Planner + Custom Workflow + Agents-as-Tools”的生产架构；handoff 只用于专家接管用户对话的少数分支；Router Fan-out 用于可并发的检索、评审和导出；所有 MCP 和高风险工具都必须经过 scope、audience、guardrail 和审批门禁。
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.idea/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# 运行产物：每次运行重新生成，不入库（样例 trace 在 examples/ 下单独跟踪）
+trace.json
+/workspace/outputs/*.md
+/workspace/outputs/*.json

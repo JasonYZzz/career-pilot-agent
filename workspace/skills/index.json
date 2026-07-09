@@ -1,0 +1,38 @@
+[
+  {
+    "name": "career_assessment",
+    "path": "skills/career_assessment.md",
+    "description": "用于分析学生画像、兴趣、能力、约束和职业倾向",
+    "triggers": ["职业规划", "方向选择", "兴趣", "专业", "适合什么"],
+    "max_tokens": 1200
+  },
+  {
+    "name": "role_matching",
+    "path": "skills/role_matching.md",
+    "description": "用于将学生画像与岗位画像做匹配度分析",
+    "triggers": ["岗位匹配", "后端", "AI应用开发", "产品经理", "数据分析"],
+    "max_tokens": 1600
+  },
+  {
+    "name": "skill_gap_analysis",
+    "path": "skills/skill_gap_analysis.md",
+    "description": "用于分析能力差距并输出补齐路径",
+    "triggers": ["能力差距", "学习路线", "技能提升"],
+    "max_tokens": 1400
+  },
+  {
+    "name": "action_plan",
+    "path": "skills/action_plan.md",
+    "description": "用于生成 30/60/90 天行动计划",
+    "triggers": ["行动计划", "时间表", "阶段规划", "90 天"],
+    "max_tokens": 1200
+  },
+  {
+    "name": "report_writer",
+    "path": "skills/report_writer.md",
+    "description": "用于生成结构化职业规划报告",
+    "triggers": ["报告", "总结", "输出方案"],
+    "max_tokens": 1000
+  }
+]
+
