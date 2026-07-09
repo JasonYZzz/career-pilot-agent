@@ -106,12 +106,3 @@ uv run career-agent run \
 - 压缩后仍保留新增工具观察，避免后续步骤看不到压缩之后的事实。
 - 提醒工具默认只写草案；模型传入 `confirmed=true` 不会被视为用户确认。
 
-## 关键取舍
-
-项目选择轻量自研 Runtime，而不是 LangGraph、数据库、向量库或复杂多 Agent 平台。这样更适合机试：代码路径短、可测试，也能清楚展示 Agent 的控制面、工具权限、预算策略和可观测性。
-
-真实模型集成参考后端工程常见的 provider/factory/fake-client 测试模式；本地工具调用仍由 CareerPilot Runtime 执行并写入 trace，不依赖托管工具替代本地 Tool Registry。
-
-## AI 编程工具使用说明
-
-本项目使用 AI 编程工具辅助整理需求、拆分实施计划、生成测试和实现代码。人工关键判断包括：将职业规划场景裁剪为 CLI Runtime；用 Skill 渐进加载展示专家能力；用真实大模型 Responses 兼容接口驱动 Planner 和报告生成；用 Boundary Guard 明确处理 prompt injection、隐私、提醒确认和 shell 风险；用 trace 作为评审可复盘证据。
